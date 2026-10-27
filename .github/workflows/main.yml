@@ -1,0 +1,64 @@
+name: main
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Main runs queue, so a dev release is never cut off; a release commit gets its own group.
+concurrency:
+  group: ${{ github.workflow }}-${{ startsWith(github.event.head_commit.message, 'release:') && github.sha || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/cache@v6
+        with:
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+
+      - run: rustup update --no-self-update stable && rustup default stable
+      - run: rustup toolchain install nightly --profile minimal --component rustfmt
+      - run: make check
+      - run: make test
+
+  # vladkens/actions: build makes the archive; publish ships the dev pre-release, or the crate and release on a release: commit
+  build:
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-latest # IOKit: the build and the crates dry run need a Mac
+    steps:
+      - uses: actions/checkout@v7
+      - run: rustup update --no-self-update stable && rustup default stable
+      # builds outside release commits as the `git describe` version, e.g. 0.9.0-12-g3672a1b
+      - uses: vladkens/actions/rust-build@v1
+        with:
+          targets: aarch64-apple-darwin
+          dev: true
+
+  publish:
+    needs: [test, build]
+    runs-on: ubuntu-latest # never compiles
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write # crates.io Trusted Publishing and attestations
+    steps:
+      - uses: actions/checkout@v7
+      - id: release
+        uses: vladkens/actions/rust-publish@v1
+
+      - uses: vladkens/actions/homebrew-bump@v1
+        with:
+          tag: ${{ steps.release.outputs.tag }}
+          file: ${{ steps.release.outputs.files }}
+          tap: vladkens/homebrew-tap
+          token: ${{ secrets.HOMEBREW_REPO_TOKEN }}

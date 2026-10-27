@@ -1,0 +1,326 @@
+## v0.10.0 – 2026-10-15
+
+### Breaking Changes
+
+- Added `cpu_tiers` to `SocInfo` and `Metrics` and `vm` to `SocInfo` in the Rust library, so code that builds these structs or matches them exhaustively needs updating; the `ecpu_*` and `pcpu_*` fields are deprecated in favor of `cpu_tiers` (#85, #100)
+
+### Features
+
+- Added support for the three CPU tiers of M6 Macs, with per-tier CPU metrics in JSON (`cpu_tiers`) and Prometheus (`macmon_cpu_tier_*`) (#85)
+- Added an info overlay (`i`) with the working directory, open files and sockets of the selected process, grouped by type and filterable (#95, #97)
+- Added killing the selected process with `k`, with Terminate and Force kill (#89)
+- Added revealing the selected process or file in Finder with `e` and copying its path with `c` (#95, #98)
+- Added several terms to the process filter, `!` to exclude matches, and a total row for each term (#86)
+- Added a sortable CPU time column (`TIME`) to the process list (#104, #105)
+- Added a total power box with fan speed to the power row (#94, by @NicholasClooney)
+- Added scrollbars to the process list, the info overlay and the help (#98, #104)
+- Added support for running in a macOS virtual machine, where unavailable power and frequency readings are hidden; the `soc` JSON object gains `vm` (#99, #100)
+
+### Fixes
+
+- Fixed processes of the `nobody` user missing from the process list (#104)
+- Fixed the base M5 Efficiency cores being labeled `P` instead of `E` (#85)
+- Fixed CPU core counts in `macmon debug` on macOS 27 (#85)
+
+### Improvements
+
+- Reduced the TUI's own CPU usage by about half with the process list shown (#103)
+- Made key hints easier to read in both light and dark terminal themes (#92)
+- Updated the Grafana dashboard to plot per-tier CPU metrics; it needs this version's exporter (#85)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.9.0...v0.10.0
+
+---
+
+## v0.9.0 – 2026-10-07
+
+### Features
+
+- Restored power readings on supported Macs running macOS 27 without requiring sudo
+- Redesigned the TUI and added a sortable, filterable process list with CPU, GPU, memory, and power usage
+- Added `stress ane` for Neural Engine load testing and included ANE workloads in `stress all`
+- Added `stress all --pulse [SECONDS]` to alternate all workloads between busy and idle periods
+- Added `find-clpc` to diagnose CPU, GPU, and ANE power counters, with optional comparison against Apple's `powermetrics`
+
+### Fixes
+
+- Fixed CPU and GPU frequency detection on M6 Macs (#79, by @johntdavies)
+
+### Breaking Changes
+
+- Changed `cpu_temp_avg` and `gpu_temp_avg` in `TempMetrics` from `f32` to `Option<f32>`; unavailable temperatures now appear as `null` in JSON instead of `0.0`. Unavailable temperature metrics are omitted from Prometheus output (#81, by @omar16100)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.8.2...v0.9.0
+
+---
+
+## v0.8.2 – 2026-08-04
+
+### Fixes
+
+- Fixed a regression that caused missing per-core CPU metrics on M3 Ultra systems (#55)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.8.1...v0.8.2
+
+---
+
+## v0.8.1 – 2026-07-31
+
+### Features
+
+- Added selectable pulse, CPU, GPU, and combined stress modes with an interactive terminal progress indicator
+- Added a TUI toggle between frequency-scaled and active-residency usage views
+- Added an optional `app` feature so Rust library users can exclude CLI and TUI dependencies with `--no-default-features`
+
+### Fixes
+
+- Fixed CPU usage ratios when hardware samples omit inactive cores
+- Restored v0.7 JSON and Prometheus metric names as compatibility aliases
+- Fixed server startup output to report the actual bound address
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.8.0...v0.8.1
+
+---
+
+## v0.8.0 – 2026-07-24
+
+### Breaking Changes
+
+- Narrowed the public Rust library API to hardware sampling types; `App`, `Config`, `ViewType`, and `zero_div` are no longer exported
+
+### Features
+
+- Added a toggleable detailed per-core CPU view and exposed per-core CPU metrics (by @it7760)
+- Added named aggregate frequency and effective-usage metrics, plus CPU and GPU active residency ratios (#61)
+- Added fan speed and fan name metrics to JSON and Prometheus output (#64, by @chodorenko)
+- Added a `--host` option for the metrics server and its launchd service (by @claytono)
+- Added a `stress` command with cyclic CPU and full CPU/GPU load modes
+
+### Fixes
+
+- Fixed RAM and swap gauge labels becoming unreadable at higher usage
+- Fixed the TUI showing an empty swap section when swap is unavailable
+- Fixed Prometheus chip labels containing special characters
+
+### Improvements
+
+- Improved `Sampler::get_metrics` to collect complete caller-scheduled intervals with faster startup (#60, by @homm)
+- Sped up hardware detection
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.7.2...v0.8.0
+
+---
+
+## v0.7.2 – 2026-05-02
+
+### Fixes
+
+- Fixed sparkline chart rendering gaps in Apple Terminal
+- Fixed frequency scale on MacBook Neo (#57)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.7.1...v0.7.2
+
+---
+
+## v0.7.1 – 2026-04-07
+
+### Fixes
+
+- Fixed CPU usage always showing 0% on Ultra chips (M1/M2/M3 Ultra) (#55)
+- Fixed GPU temperature sometimes reporting bogus values (#54, by @gtalusan)
+- Fixed potential data race when sharing metrics between threads
+- Fixed memory size showing 0GB on systems with 256GB or more RAM
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.7.0...v0.7.1
+
+---
+
+## v0.7.0 – 2026-04-01
+
+### Features
+
+- Added HTTP server mode with JSON and Prometheus metrics endpoints (#34, #53)
+- Added launchd service install/uninstall commands for the HTTP server (#34)
+- Added combined CPU usage metric (#28)
+- Added RAM usage percentage display in the label (#31)
+- Exposed macmon as a library crate for programmatic use (#52, by @tasleson)
+
+### Fixes
+
+- Fixed crash on Apple M5 Max due to renumbered voltage-states keys (by @swiftraccoon)
+- Fixed processor count parsing and dynamic E/P/S core labels on M5 (by @swiftraccoon)
+- Fixed bogus sensor temperature readings being included in averages (#50, by @gtalusan)
+
+### Docs
+
+- Added Nix installation instructions (by @thibmaek)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.6.1...v0.7.0
+
+---
+
+## v0.6.1 – 2025-06-02
+
+### Features
+
+- Added SoC info output in pipe/JSON mode via `--soc-info` flag (by @aliasaria)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.6.0...v0.6.1
+
+---
+
+## v0.6.0 – 2025-02-26
+
+### Features
+
+- Added timestamp field in pipe mode output (#23)
+
+### Fixes
+
+- Fixed temperature smoothing on M3/M4 chips when sensor values are unavailable (#12)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.5.1...v0.6.0
+
+---
+
+## v0.5.1 – 2024-12-22
+
+### Improvements
+
+- Improved CPU average temperature calculation to include efficiency cores via SMC
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.5.0...v0.5.1
+
+---
+
+## v0.5.0 – 2024-12-20
+
+### Features
+
+- Added hotkeys to change the refresh interval interactively (#16)
+- Allowed `--interval` flag to be specified in any argument position (#18)
+
+### Fixes
+
+- Fixed CPU power reporting for Ultra chips (#17)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.4.2...v0.5.0
+
+---
+
+## v0.4.2 – 2024-12-17
+
+### Features
+
+- Added RAM power metric and sample count limit option to the pipe command
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.4.1...v0.4.2
+
+---
+
+## v0.4.1 – 2024-12-14
+
+### Fixes
+
+- Fixed crash when running on virtual machines
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.4.0...v0.4.1
+
+---
+
+## v0.4.0 – 2024-12-01
+
+### Features
+
+- Added raw metrics output in JSON format via pipe command
+
+### Fixes
+
+- Fixed GPU frequency reporting (#11)
+
+### Improvements
+
+- Added smooth interpolation of temperature and power values between updates (#10)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.3.3...v0.4.0
+
+---
+
+## v0.3.3 – 2024-10-25
+
+### Fixes
+
+- Fixed excessively high values reported on M3 chips (#9)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.3.2...v0.3.3
+
+---
+
+## v0.3.2 – 2024-10-22
+
+Internal maintenance release — no user-facing changes.
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.3.1...v0.3.2
+
+---
+
+## v0.3.1 – 2024-10-18
+
+### Fixes
+
+- Fixed RAM sparkline max value calculation (by @gianlucatruda)
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.3.0...v0.3.1
+
+---
+
+## v0.3.0 – 2024-10-06
+
+### Features
+
+- Added ability to switch chart type
+- Added settings persistence between sessions
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.2.2...v0.3.0
+
+---
+
+## v0.2.2 – 2024-07-03
+
+### Fixes
+
+- Fixed IOHid crash
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.2.1...v0.2.2
+
+---
+
+## v0.2.1 – 2024-06-25
+
+### Features
+
+- Added total system power display
+- Added `--no-color` mode
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.2.0...v0.2.1
+
+---
+
+## v0.2.0 – 2024-06-25
+
+### Features
+
+- Added CPU/GPU average temperature display
+- Added ability to change colors
+- Added version label to the UI
+- Improved E-CPU and P-CPU frequency calculation from per-core metrics
+
+**Full Changelog**: https://github.com/vladkens/macmon/compare/v0.1.0...v0.2.0
+
+---
+
+## v0.1.0 – 2024-06-16
+
+Initial release.
+
+**Full Changelog**: https://github.com/vladkens/macmon/commits/v0.1.0
