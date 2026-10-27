@@ -1,68 +1,36 @@
-# `macmon` – Mac Monitor
+# `trademon` – a trading-style Mac Monitor
 
-<div align="center">
+`trademon` is a sudoless performance monitor for Apple Silicon Macs that looks like a trading terminal. It reads real-time CPU / GPU / ANE power usage, temperatures, and memory stats through a private macOS API — the same data `powermetrics` exposes — without requiring root access, and charts them as candlesticks.
 
-[<img src="https://badges.ws/github/assets-dl/vladkens/macmon" />](https://github.com/vladkens/macmon/releases)
-[<img src="https://badges.ws/github/release/vladkens/macmon" />](https://github.com/vladkens/macmon/releases)
-[<img src="https://badges.ws/github/license/vladkens/macmon" />](https://github.com/vladkens/macmon/blob/main/LICENSE)
-[<img src="https://badges.ws/badge/-/buy%20me%20a%20coffee/ff813f?icon=buymeacoffee&label" alt="donate" />](https://buymeacoffee.com/vladkens)
-
-</div>
-
-`macmon` is a sudoless performance monitor for Apple Silicon Macs. It reads real-time CPU / GPU / ANE power usage, temperatures, and memory stats through a private macOS API — the same data `powermetrics` exposes — without requiring root access.
-
-<div align="center">
-  <img src="https://github.com/vladkens/macmon/blob/assets/macmon-v0.9.png?raw=true" alt="preview" />
-</div>
+It is a fork of [vladkens/macmon](https://github.com/vladkens/macmon). The command is `trdmon`.
 
 ## 🌟 Features
 
+- 🕯️ Candlestick charts for CPU, GPU, RAM and power: each candle groups 4 samples (open, close, high, low)
+- 🟢🔴 Up in green, down in red; press `x` to swap them (up in red, down in green)
+- 📋 Process list where PID, CPU%, MEM, POWER and GPU turn green or red as the process's CPU% goes up or down (NAME, USER and TIME keep the normal color)
 - 🚫 Runs without sudo
 - ⚡ Real-time CPU / GPU / ANE power usage
 - 📊 CPU frequency-scaled and active ratios per cluster
 - 💾 RAM / Swap usage
-- 📈 Historical charts with average and max values
 - 🌡️ Average CPU / GPU temperature
-- 📋 Process list with per-process CPU, memory, power and GPU usage
-- 🎨 Follows your terminal's color scheme
-- 🪟 Can be displayed in a small window
+- 🎨 Uses your terminal's own red and green, so it follows its color scheme
 - 🦀 Written in Rust
 
 ## 📥 Installation
 
-Install [`macmon`](https://formulae.brew.sh/formula/macmon) using [brew](https://brew.sh/):
+Build from source with [Cargo](https://rustup.rs/):
 
 ```sh
-brew install macmon
+cargo install --git https://github.com/y0b1/trademon
 ```
 
-<details>
-<summary>Other installation methods</summary>
-
-Install using [MacPorts](https://ports.macports.org/port/macmon/):
-
-```sh
-sudo port install macmon
-```
-
-Install using [Cargo](https://crates.io/crates/macmon):
-
-```sh
-cargo install macmon
-```
-
-Install using [Nix](https://search.nixos.org/packages?show=macmon&from=0&size=50&type=packages&query=macmon):
-
-```sh
-nix-env -i macmon
-```
-
-</details>
+This installs `trdmon` into `~/.cargo/bin`.
 
 ## 🚀 Usage
 
 ```sh
-Usage: macmon [OPTIONS] [COMMAND]
+Usage: trdmon [OPTIONS] [COMMAND]
 
 Commands:
   pipe    Output metrics in JSON format
@@ -79,7 +47,14 @@ Options:
 
 ### Interactive mode
 
-Run `macmon` without a subcommand to open the terminal UI: the metric boxes on top and the process list below. Press `?` in the app to see the keys.
+Run `trdmon` without a subcommand to open the terminal UI: the candlestick boxes on top and the process list below. Press `?` in the app to see the keys.
+
+| Key | Action |
+| --- | ------ |
+| `x` | Swap the up / down colors (saved in `~/.config/trademon.json`) |
+| `v` | Candles / gauge |
+| `p` | Show / hide the processes |
+| `q` | Quit |
 
 Press `/` to filter the process list. A filter is a comma-separated list of terms, each matched case-insensitively against the process name or pid: `safari, cargo` shows processes matching any term, and a term starting with `!` hides its matches (`chrome, !helper`). `Enter` keeps the filter, `Esc` clears it.
 
@@ -88,15 +63,15 @@ Press `/` to filter the process list. A filter is a comma-separated list of term
 You can use the `pipe` subcommand to output metrics in JSON format, which makes it suitable for piping into other tools or scripts. For example:
 
 ```sh
-macmon pipe | jq
+trdmon pipe | jq
 ```
 
-This command runs `macmon` in "pipe" mode and sends the output to `jq` for pretty-printing.
+This command runs `trdmon` in "pipe" mode and sends the output to `jq` for pretty-printing.
 
 You can also specify the number of samples to collect using the `-s` or `--samples` parameter (default: `0`, which runs indefinitely), and set the update interval in milliseconds using the `-i` or `--interval` parameter (default: `1000` ms). For example:
 
 ```sh
-macmon pipe -s 10 -i 500 | jq
+trdmon pipe -s 10 -i 500 | jq
 ```
 
 This will collect 10 samples with an update interval of 500 milliseconds.
@@ -106,11 +81,11 @@ This will collect 10 samples with an update interval of 500 milliseconds.
 You can use the `serve` subcommand to expose metrics over HTTP. This is useful for integrating with monitoring systems like [Prometheus](https://prometheus.io/) and [Grafana](https://grafana.com/).
 
 ```sh
-macmon serve                   # default port 9090, interval 1000ms
-macmon serve --host 127.0.0.1  # listen on localhost only
-macmon serve -p 8080           # custom port
-macmon serve -i 500            # sampling interval 500ms
-macmon serve &                 # run in background
+trdmon serve                   # default port 9090, interval 1000ms
+trdmon serve --host 127.0.0.1  # listen on localhost only
+trdmon serve -p 8080           # custom port
+trdmon serve -i 500            # sampling interval 500ms
+trdmon serve &                 # run in background
 ```
 
 Two endpoints are available:
@@ -122,20 +97,20 @@ Two endpoints are available:
 
 #### launchd service
 
-To start `macmon serve` automatically on login and keep it running:
+To start `trdmon serve` automatically on login and keep it running:
 
 ```sh
-macmon serve --install                   # install and start (default port 9090)
-macmon serve --port 8080 --install       # with custom port
-macmon serve --host 127.0.0.1 --install  # listen on localhost only
-macmon serve --uninstall                 # stop and remove
+trdmon serve --install                   # install and start (default port 9090)
+trdmon serve --port 8080 --install       # with custom port
+trdmon serve --host 127.0.0.1 --install  # listen on localhost only
+trdmon serve --uninstall                 # stop and remove
 ```
 
-This creates a launchd agent at `~/Library/LaunchAgents/com.macmon.plist` that auto-starts on login and restarts on crash.
+This creates a launchd agent at `~/Library/LaunchAgents/com.trademon.plist` that auto-starts on login and restarts on crash.
 
 #### Prometheus and Grafana
 
-The `/metrics` endpoint exposes metrics in Prometheus format. See [`examples/grafana`](examples/grafana) for a local demo stack with Prometheus and Grafana.
+The `/metrics` endpoint exposes metrics in Prometheus format. See [`examples/grafana`](examples/grafana) for a local demo stack with Prometheus and Grafana. Metric names keep the `macmon_` prefix, so existing dashboards work unchanged.
 
 <details>
 <summary>Prometheus output example</summary>
@@ -183,15 +158,15 @@ macmon_cpu_tier_active_ratio{chip="Apple M3 Pro",tier="P"} 0.04
 
 ### Stress testing
 
-Use `macmon stress` to generate load while checking metric behavior:
+Use `trdmon stress` to generate load while checking metric behavior:
 
 ```sh
-macmon stress
-macmon stress pulse --duration 30
-macmon stress cpu --duration 30
-macmon stress cpu --workers 8 --duration 30
-macmon stress gpu --duration 30
-macmon stress all --duration 30
+trdmon stress
+trdmon stress pulse --duration 30
+trdmon stress cpu --duration 30
+trdmon stress cpu --workers 8 --duration 30
+trdmon stress gpu --duration 30
+trdmon stress all --duration 30
 ```
 
 The default `pulse` mode generates a predictable cyclic CPU load with a fixed 50% duty cycle on half of the logical CPUs. The `cpu` and `gpu` modes continuously load only the selected processor, while `all` loads both. The `cpu` and `all` modes use all logical CPUs unless `--workers` is specified; `--workers` has no effect in `gpu` mode.
@@ -200,9 +175,9 @@ The default `pulse` mode generates a predictable cyclic CPU load with a fixed 50
 
 ### Power sources and macOS 27
 
-macOS 27 broke the CPU/ANE power source that macmon previously used without root. The IOReport `Energy Model` counters can remain visible but stop updating: refreshing them now requires the private `com.apple.private.pmgr.nrg.reporting` entitlement. Apple's signed `powermetrics` has this entitlement and can keep using the named channels. Running macmon with `sudo` does not grant the same access.
+macOS 27 broke the CPU/ANE power source that trademon previously used without root. The IOReport `Energy Model` counters can remain visible but stop updating: refreshing them now requires the private `com.apple.private.pmgr.nrg.reporting` entitlement. Apple's signed `powermetrics` has this entitlement and can keep using the named channels. Running trademon with `sudo` does not grant the same access.
 
-The working rootless workaround we found is to read hidden energy reports from the AppleCLPC driver through IOReport. These reports use opaque IDs instead of discoverable CPU/GPU/ANE channel names, so macmon has to identify the counters and verify their units. This leaves macmon maintaining undocumented mappings for data that Apple's own tool can still read directly.
+The working rootless workaround we found is to read hidden energy reports from the AppleCLPC driver through IOReport. These reports use opaque IDs instead of discoverable CPU/GPU/ANE channel names, so trademon has to identify the counters and verify their units. This leaves trademon maintaining undocumented mappings for data that Apple's own tool can still read directly.
 
 Both the CLI and the Rust library use known CLPC counters automatically, and `Sampler::new()` retains legacy fallbacks for older systems. New chips or driver versions may need additional mappings. On an unsupported configuration, zero CPU/ANE readings can mean unavailable counters rather than zero consumption. See [docs/clpc-discovery.md](docs/clpc-discovery.md) for details.
 
@@ -304,15 +279,15 @@ Examples:
 
 ## 📚 Library usage
 
-`macmon` can be used as a Rust library to collect Apple Silicon metrics in your own applications.
+`trademon` can be used as a Rust library to collect Apple Silicon metrics in your own applications.
 
 Add it to your project:
 
 ```sh
-cargo add macmon --no-default-features
+cargo add trademon --git https://github.com/y0b1/trademon --no-default-features
 ```
 
-The default `app` feature enables the `macmon` executable and its terminal UI dependencies. Disable default features when using `macmon` only as a library.
+The default `app` feature enables the `trdmon` executable and its terminal UI dependencies. Disable default features when using `trademon` only as a library.
 
 Run the [demo example](examples/demo.rs) from this repository:
 
@@ -323,7 +298,7 @@ cargo run --example demo
 Then use the `Sampler` to collect metrics:
 
 ```rust
-use macmon::Sampler;
+use trademon::Sampler;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut sampler = Sampler::new()?;
@@ -351,7 +326,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```rust
 use std::{sync::mpsc, thread};
 
-use macmon::Sampler;
+use trademon::Sampler;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (tx, rx) = mpsc::channel();
@@ -380,11 +355,9 @@ Creating `Sampler` inside the worker keeps its low-level macOS handles on that t
 
 All contributions are welcome! Feel free to open an issue or submit a pull request.
 
-The [dev pre-release](https://github.com/vladkens/macmon/releases/tag/dev), built from `main`, shows its git version in `macmon -V` and the TUI title, e.g. `macmon 0.9.0-12-g3672a1b` (local builds show the crate version); mention it when reporting an issue.
-
 ## 📝 License
 
-Distributed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE). Based on [macmon](https://github.com/vladkens/macmon) by vladkens.
 
 ## 🔍 See also
 
