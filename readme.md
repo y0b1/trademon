@@ -4,6 +4,10 @@
 
 It is a fork of [vladkens/macmon](https://github.com/vladkens/macmon). The command is `trdmon`.
 
+<div align="center">
+  <img src="docs/assets/trademon.png" alt="trademon: candlestick charts and the process list in red and green" />
+</div>
+
 ## 🌟 Features
 
 - 🕯️ Candlestick charts for CPU, GPU, RAM and power: each candle groups 4 samples (open, close, high, low)
